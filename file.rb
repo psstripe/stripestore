@@ -1,3 +1,8 @@
+require_relative 'stripe_keys'
+require 'rest-client'
+require 'pry'
+require 'json'
+
 ####################
 # METHODS
 ####################
@@ -54,6 +59,26 @@ end
 # You should fill this method in!
 def run_charge(card, amount)
   puts "-" * 10
+  token_response = RestClient.post('https://api.stripe.com/v1/tokens',
+    {card:
+      {number: card[:number],
+        exp_month: card[:exp_month],
+        exp_year: card[:exp_year],
+        cvc: card[:cvc]
+      }},
+    {authorization: 'Bearer sk_test_YIhmQ8VJBb9NB2p81wVLP8R0'})
+
+    token_id= JSON.parse(token_response.body)["id"]
+
+    charge_response = RestClient.post 'https://api.stripe.com/v1/charges',
+          {amount: 2000,
+            currency: "usd",
+            source: token_id,
+            description: "first charge"},
+              {authorization: 'Bearer sk_test_YIhmQ8VJBb9NB2p81wVLP8R0'}
+
+    p JSON.parse(charge_response.body)["id"]
+
   puts "The charge method would run here."
   puts "It would use this card:"
   p card
@@ -92,8 +117,8 @@ if user_has_coupon?(coupon)
   puts "Coupon applied. Your total is now #{total}."
 end
 
-# Get the user's card info
-user_card = get_card_info
+  # Get the user's card info
+  user_card = get_card_info
 
-# Charge the user
-run_charge(user_card, total)
+  # Charge the user
+  run_charge(user_card, total)
